@@ -6,27 +6,49 @@ import org.ethereum.geth.Address;
 import org.ethereum.geth.BigInt;
 import org.ethereum.geth.Block;
 import org.ethereum.geth.Context;
+import org.ethereum.geth.Enode;
+import org.ethereum.geth.Enodes;
 import org.ethereum.geth.EthereumClient;
 import org.ethereum.geth.Geth;
 import org.ethereum.geth.Hash;
 import org.ethereum.geth.Header;
+import org.ethereum.geth.KeyStore;
 import org.ethereum.geth.Node;
 import org.ethereum.geth.NodeConfig;
 import org.ethereum.geth.NodeInfo;
 import org.ethereum.geth.Transaction;
 
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
+
+    private void log(String s) {
+        TextView tv = findViewById(R.id.hello_world);
+        tv.append(s);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         try {
-            EthereumClient ec = getInfuraClient();
-            runTests(ec);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        EthereumClient ev = getLocalNode();
+                        runTests(ev);
+                    } catch (Exception e) {
+                        log(e.toString());
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+            //EthereumClient ec = getInfuraClient();
+            //runTests(ec);
+
         } catch(Exception e) {
             log("Could not connect: " + e.toString());
             e.printStackTrace();
@@ -39,27 +61,30 @@ public class MainActivity extends AppCompatActivity {
     }
     private EthereumClient getLocalNode() throws Exception{
         NodeConfig conf = Geth.newNodeConfig();
+        Enode e = new Enode("enode://279944d8dcd428dffaa7436f25ca0ca43ae19e7bcf94a8fb7d1641651f92d121e972ac2e8f381414b80cc8e5555811c2ec6e1a99bb009b3f53c4c69923e11bd8@35.158.244.151:30303");
+        Enodes enodes = new Enodes(1);
+        enodes.set(0,e);
+        conf.setBootstrapNodes(enodes);
         Node node = Geth.newNode(getFilesDir() + "/.ethereum", conf);
         node.start();
         NodeInfo info = node.getNodeInfo();
-        String s = String.format("Name: %s Address: %s Protocols: %s\n",
-                info.getName(), info.getListenerAddress(), info.getProtocols());
+        log(String.format("Name: %s Address: %s Protocols: %s\n",
+                info.getName(), info.getListenerAddress(), info.getProtocols()));
+        log("waiting for peers");
+        while(node.getPeersInfo().size() == 0) {
+            //wait
+            SystemClock.sleep(1000);
+        }
         return node.getEthereumClient();
     }
 
     private void runTests(EthereumClient ec) throws Exception {
         Context ctx = new Context();
-        String result = "RESULT:\n\n";
         TestGetBalance(ctx, ec);
         TestGetBlock(ctx, ec);
         TestGetTransaction(ctx, ec);
         TestGetHeader(ctx, ec);
-    }
-
-
-    private void log(String s) {
-        TextView tv = findViewById(R.id.hello_world);
-        tv.append(s);
+        log("Successful ran tests");
     }
 
     private void TestGetBalance(Context ctx, EthereumClient ec) throws Exception {
@@ -83,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
                 b.getHash().getHex(), b2.getHash().getHex()));
     }
 
-    private String TestGetTransaction(Context ctx, EthereumClient ec) throws Exception {
+    private void TestGetTransaction(Context ctx, EthereumClient ec) throws Exception {
         Block b = ec.getBlockByNumber(ctx, 9890000);
         // Retrieve the seventh transaction of block 9890000
         Transaction tx = ec.getTransactionInBlock(ctx, b.getHash(), 7);
@@ -96,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
         log(String.format("Tx hash: %s \n",tx.getHash().getHex()));
     }
 
-    private String TestGetHeader(Context ctx, EthereumClient ec) throws Exception {
+    private void TestGetHeader(Context ctx, EthereumClient ec) throws Exception {
         Block b = ec.getBlockByNumber(ctx, 9890000);
         Header h1 = b.getHeader();
         Header h2 = ec.getHeaderByHash(ctx, h1.getHash());
