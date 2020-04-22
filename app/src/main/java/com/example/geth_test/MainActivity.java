@@ -12,10 +12,10 @@ import org.ethereum.geth.EthereumClient;
 import org.ethereum.geth.Geth;
 import org.ethereum.geth.Hash;
 import org.ethereum.geth.Header;
-import org.ethereum.geth.KeyStore;
 import org.ethereum.geth.Node;
 import org.ethereum.geth.NodeConfig;
 import org.ethereum.geth.NodeInfo;
+import org.ethereum.geth.SyncProgress;
 import org.ethereum.geth.Transaction;
 
 import android.os.Bundle;
@@ -24,9 +24,14 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private void log(String s) {
-        TextView tv = findViewById(R.id.hello_world);
-        tv.append(s);
+    private void log(final String s) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TextView tv = findViewById(R.id.hello_world);
+                tv.append(s);
+            }
+        });
     }
 
     @Override
@@ -61,20 +66,31 @@ public class MainActivity extends AppCompatActivity {
     }
     private EthereumClient getLocalNode() throws Exception{
         NodeConfig conf = Geth.newNodeConfig();
-        Enode e = new Enode("enode://279944d8dcd428dffaa7436f25ca0ca43ae19e7bcf94a8fb7d1641651f92d121e972ac2e8f381414b80cc8e5555811c2ec6e1a99bb009b3f53c4c69923e11bd8@35.158.244.151:30303");
-        Enodes enodes = new Enodes(1);
-        enodes.set(0,e);
-        conf.setBootstrapNodes(enodes);
+        conf.setBootstrapNodes(Geth.goerliBootnodes());
         Node node = Geth.newNode(getFilesDir() + "/.ethereum", conf);
         node.start();
         NodeInfo info = node.getNodeInfo();
         log(String.format("Name: %s Address: %s Protocols: %s\n",
                 info.getName(), info.getListenerAddress(), info.getProtocols()));
         log("waiting for peers");
-        while(node.getPeersInfo().size() == 0) {
-            //wait
+        boolean finishedSyncing = false;
+        boolean syncing = false;
+        while(!finishedSyncing) {
+            SyncProgress sn = node.getEthereumClient().syncProgress(new Context());
+
+            if (sn != null) {
+                log("highest block:" + sn.getHighestBlock());
+                syncing = true;
+                //wait
+                SystemClock.sleep(1000);
+            } else if (syncing){
+                finishedSyncing = true;
+            }
             SystemClock.sleep(1000);
         }
+        SystemClock.sleep(1000);
+        log("asdfasdfasdfasdfasdfasdf");
+        SystemClock.sleep(1000);
         return node.getEthereumClient();
     }
 
