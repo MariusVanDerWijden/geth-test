@@ -15,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 TextView tv = findViewById(R.id.hello_world);
                 tv.append(s);
+                tv.append("\n");
                 tv.setTextColor(Color.BLACK);
             }
         });
@@ -49,8 +50,8 @@ public class MainActivity extends AppCompatActivity {
 
         log("\n\n");
         try {
-            //NodeTests.runInfuraTests(this);
-            //NodeTests.runLesTests(this);
+            NodeTests.runInfuraTests(this);
+            NodeTests.runLesTests(this);
             //WhisperTests.runWhisperTests(this);
             BindingTests.testBinding(this);
         } catch(Exception e) {

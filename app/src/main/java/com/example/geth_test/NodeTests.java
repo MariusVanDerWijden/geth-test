@@ -56,10 +56,8 @@ public class NodeTests {
 		NodeConfig conf = Geth.newNodeConfig();
 		conf.setEthereumGenesis(Geth.goerliGenesis());
 		Enodes bn = Geth.foundationBootnodes();
-		//Enodes bn = Geth.goerliBootnodes();
 		Enode enode = new Enode("enode://189aab7dafa38ba15db6ecb2ada7a4d0f951b6dc52337983c2babb81f8844242b7e7bc5a8dddeeb39a8e88308cda81f5b84d961a1e0e52a6ea60d6ad6b390fe4@13.48.178.34:30303?discport=1102");
-		bn.set(0,enode);
-		conf.setBootstrapNodes(bn);
+		conf.addBootstrapNode(enode);
 		Node node = Geth.newNode(cb.getFilesDir() + "/.ethereum/goerli", conf);
 		node.start();
 		NodeInfo info = node.getNodeInfo();
@@ -98,7 +96,7 @@ public class NodeTests {
 	private static void TestGetBalance(Context ctx, EthereumClient ec) throws Exception {
 		Address coinbase = new Address("0x57d22b967c9dc64e5577f37edf1514c2d8985099");
 		BigInt big = ec.getBalanceAt(ctx, coinbase, -1);
-		String s = "Address: " + coinbase.getHex() + "\n";
+		String s = "Address: " + coinbase.toString() + "\n";
 		s += "Balance: " + big.toString() + " wei\n";
 		cb.log(s);
 	}
@@ -110,10 +108,10 @@ public class NodeTests {
 		if(!b.equals(b2)){
 			throw new Exception(
 					String.format("Invalid Blocks B1: %s B2: %s\n",
-							b.getHash().toString(), b2.getHash().getHex()));
+							b.getHash().toString(), b2.getHash().toString()));
 		}
 		cb.log(String.format("Retrieved block: %s with hash %s\n",
-				b.getHash().getHex(), b2.getHash().getHex()));
+				b.getNumber(), b2.getHash()));
 	}
 
 	private static void TestGetTransaction(Context ctx, EthereumClient ec) throws Exception {
@@ -124,9 +122,9 @@ public class NodeTests {
 		if(!tx.equals(tx2)){
 			throw new Exception(
 					String.format("Invalid transactions Tx1: %s, Tx2: %s",
-							tx.getHash().getHex(), tx2.getHash().getHex()));
+							tx.getHash().toString(), tx2.getHash().toString()));
 		}
-		cb.log(String.format("Tx hash: %s \n",tx.getHash().getHex()));
+		cb.log(String.format("Tx hash: %s \n",tx.getHash()));
 	}
 
 	private static void TestGetHeader(Context ctx, EthereumClient ec) throws Exception {
@@ -137,13 +135,13 @@ public class NodeTests {
 		if(!h1.equals(h2)) {
 			throw new Exception(
 					String.format("Invalid header h1; %s, h2: %s",
-							h1.getHash().getHex(), h2.getHash().getHex()));
+							h1.getHash().toString(), h2.getHash().toString()));
 		}
 		if(!h2.equals(h3)) {
 			throw new Exception(
 					String.format("Invalid header h2; %s, h3: %s",
-							h2.getHash().getHex(), h3.getHash().getHex()));
+							h2.getHash().toString(), h3.getHash().toString()));
 		}
-		cb.log(String.format("Header hash: %s \n",h1.getHash().getHex()));
+		cb.log(String.format("Header hash: %s \n",h1.getHash()));
 	}
 }

@@ -19,10 +19,9 @@ public class AccountTests {
 			}
 		}
 		Account acc =  ks.getAccounts().get(0);
-		if (!acc.getAddress().getHex().equals(ADDR)) {
+		if (!acc.getAddress().toString().equals(ADDR)) {
 			throw new Exception("Wrong SK/ADDR");
 		}
-		cb.log("1\n");
 		return ks;
 	}
 }
